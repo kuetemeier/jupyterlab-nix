@@ -34,7 +34,14 @@
         # Equivalent to  inputs'.nixpkgs.legacyPackages.hello;
         packages.default = pkgs.hello;
 
-        devenv.shells.default = {
+        devenv.shells.default = let 
+          appDeps = with pkgs; [
+            gcc-unwrapped
+          ];
+          pythonPackages = [
+
+          ];
+        in {
           name = "jkr-jupyterlab";
 
           imports = [
@@ -47,18 +54,22 @@
           packages = [
             config.packages.default
             pkgs.stdenv.cc.cc.lib
-          ];
+            pkgs.nix
+          ] ++ appDeps;
 
           languages.python.enable = true;
+          # languages.python.package = pkgs.python312.withPackages pythonPackages;
           languages.python.package = pkgs.python312;
           # languages.python.version = "3.12";
           languages.python.venv.enable = true;
           languages.python.poetry.enable = true;
 
 
-          # export LD_LIBRARY_PATH=${pkgs.lib.makeLibPath [pkgs.stdenv.cc.cc.lib]}
+          # export LD_LIBRARY_PATH=${l.makeLibPath [pkgs.stdenv.cc.cc.lib]}
+          #  export LD_LIBRARY_PATH = "$LD_LIBRARY_PATH:${pkgs.stdenv.cc.cc.lib}/lib";
           enterShell = ''
-            echo "Start Jupyter Lab with `jupyter lab`"
+            export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [pkgs.stdenv.cc.cc.lib]}:$LD_LIBRARY_PATH"
+            echo "Start Jupyter Lab with 'jupyter lab'"
           '';
         };
 
