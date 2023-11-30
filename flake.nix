@@ -1,5 +1,5 @@
 {
-  description = "Description for the project";
+  description = "jkr-jupyterlab - Jupyter Lab Environment";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -7,6 +7,11 @@
     nix2container.url = "github:nlewo/nix2container";
     nix2container.inputs.nixpkgs.follows = "nixpkgs";
     mk-shell-bin.url = "github:rrbutani/nix-mk-shell-bin";
+
+    # You can now refer to packages like:
+    # nixpkgs-python.packages.x86_64-linux."2.7"
+    nixpkgs-python.url = "github:cachix/nixpkgs-python";
+    nixpkgs-python.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   nixConfig = {
@@ -14,7 +19,7 @@
     extra-substituters = "https://devenv.cachix.org";
   };
 
-  outputs = inputs@{ flake-parts, ... }:
+  outputs = inputs@{ flake-parts, nixpkgs-python, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } {
       imports = [
         inputs.devenv.flakeModule
@@ -30,7 +35,7 @@
         packages.default = pkgs.hello;
 
         devenv.shells.default = {
-          name = "my-project";
+          name = "jkr-jupyterlab";
 
           imports = [
             # This is just like the imports in devenv.nix.
@@ -39,10 +44,21 @@
           ];
 
           # https://devenv.sh/reference/options/
-          packages = [ config.packages.default ];
+          packages = [
+            config.packages.default
+            pkgs.stdenv.cc.cc.lib
+          ];
 
+          languages.python.enable = true;
+          languages.python.package = pkgs.python312;
+          # languages.python.version = "3.12";
+          languages.python.venv.enable = true;
+          languages.python.poetry.enable = true;
+
+
+          # export LD_LIBRARY_PATH=${pkgs.lib.makeLibPath [pkgs.stdenv.cc.cc.lib]}
           enterShell = ''
-            hello
+            echo "Start Jupyter Lab with `jupyter lab`"
           '';
         };
 
